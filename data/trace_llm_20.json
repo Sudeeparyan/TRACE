@@ -1,0 +1,82 @@
+[
+  {
+    "prompt": "[Input]\nTower TX005 in R-E: users=146, bw=20.89%, RSRQ=-9.61 dB, err='high_cpu', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=expand; Reason=coverage_expand; Healed=False; Confidence=0.96."
+  },
+  {
+    "prompt": "[Input]\nTower TX008 in R-C: users=0, bw=59.2%, RSRQ=-8.38 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.24."
+  },
+  {
+    "prompt": "[Input]\nTower TX002 in R-D: users=361, bw=53.36%, RSRQ=-9.44 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.43."
+  },
+  {
+    "prompt": "[Input]\nTower TX005 in R-D: users=178, bw=17.11%, RSRQ=-10.31 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.35."
+  },
+  {
+    "prompt": "[Input]\nTower TX001 in R-B: users=178, bw=15.73%, RSRQ=-9.77 dB, err='packet_loss', event='concert'. Recommended action?",
+    "completion": "[Output]\nAction=expand; Reason=coverage_expand; Healed=False; Confidence=0.56."
+  },
+  {
+    "prompt": "[Input]\nTower TX001 in R-D: users=309, bw=59.47%, RSRQ=-12.33 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.64."
+  },
+  {
+    "prompt": "[Input]\nTower TX009 in R-C: users=343, bw=34.66%, RSRQ=-9.86 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.34."
+  },
+  {
+    "prompt": "[Input]\nTower TX006 in R-E: users=113, bw=23.53%, RSRQ=-9.22 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.72."
+  },
+  {
+    "prompt": "[Input]\nTower TX010 in R-E: users=321, bw=24.45%, RSRQ=-6.46 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.7."
+  },
+  {
+    "prompt": "[Input]\nTower TX006 in R-B: users=136, bw=0.0%, RSRQ=-10.12 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.66."
+  },
+  {
+    "prompt": "[Input]\nTower TX006 in R-D: users=299, bw=24.87%, RSRQ=-5.66 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.35."
+  },
+  {
+    "prompt": "[Input]\nTower TX002 in R-D: users=224, bw=22.37%, RSRQ=-13.65 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.65."
+  },
+  {
+    "prompt": "[Input]\nTower TX002 in R-C: users=0, bw=36.46%, RSRQ=-7.32 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.6."
+  },
+  {
+    "prompt": "[Input]\nTower TX005 in R-D: users=323, bw=44.7%, RSRQ=-12.48 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=expand; Reason=coverage_expand; Healed=True; Confidence=0.35."
+  },
+  {
+    "prompt": "[Input]\nTower TX007 in R-A: users=19, bw=23.99%, RSRQ=-12.81 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=expand; Reason=coverage_expand; Healed=True; Confidence=0.76."
+  },
+  {
+    "prompt": "[Input]\nTower TX001 in R-D: users=360, bw=60.67%, RSRQ=-9.77 dB, err='none', event='concert'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.36."
+  },
+  {
+    "prompt": "[Input]\nTower TX003 in R-E: users=300, bw=14.49%, RSRQ=-14.6 dB, err='none', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=expand; Reason=coverage_expand; Healed=True; Confidence=0.68."
+  },
+  {
+    "prompt": "[Input]\nTower TX008 in R-B: users=302, bw=8.56%, RSRQ=-14.77 dB, err='none', event='concert'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.74."
+  },
+  {
+    "prompt": "[Input]\nTower TX006 in R-E: users=491, bw=5.68%, RSRQ=-7.9 dB, err='none', event='concert'. Recommended action?",
+    "completion": "[Output]\nAction=hold; Reason=no_change; Healed=True; Confidence=0.37."
+  },
+  {
+    "prompt": "[Input]\nTower TX003 in R-B: users=198, bw=40.83%, RSRQ=-5.48 dB, err='radio_failure', event='normal'. Recommended action?",
+    "completion": "[Output]\nAction=expand; Reason=coverage_expand; Healed=False; Confidence=0.93."
+  }
+]
