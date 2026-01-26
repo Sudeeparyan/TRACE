@@ -6,6 +6,26 @@
 
 ---
 
+## ⚡ Quick Start (JSON Upload Fix Included!)
+
+```bash
+# Test the JSON upload fix
+python test_json_upload_fix.py
+
+# Start TRACE (patch auto-applies)
+start_trace.bat   # Windows
+# OR
+adk web           # Direct start
+
+# Open browser: http://localhost:8000
+# Upload JSON files - they work now! 🎉
+```
+
+**✅ JSON File Upload Issue RESOLVED:**  
+The `400 INVALID_ARGUMENT - application/json mimeType not supported` error has been fixed with an automatic conversion patch. See [`JSON_UPLOAD_FIX_COMPLETE.md`](JSON_UPLOAD_FIX_COMPLETE.md) for details.
+
+---
+
 ## 📋 Summary
 
 TRACE is an agentic multi-agent system that cuts mobile-tower energy use by 30–40% during low demand and prevents congestion during traffic surges by coordinating Agent-to-Agent (A2A) communication via Model Context Protocol (MCP), leveraging Amazon Bedrock AgentCore and implementing intelligent cloud-edge control using Google's Agent Development Kit (ADK).

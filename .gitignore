@@ -1,3 +1,41 @@
+# Virtual environments
 .venv
+
+# Environment files
 .env
 .env.example
+
+# Dependencies
+node_modules
+package-lock.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Reference/unused folders
+referance/
+trace_aws_production/
+test_data/
+research_paper/
+markdowns/
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

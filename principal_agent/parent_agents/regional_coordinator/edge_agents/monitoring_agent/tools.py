@@ -6,10 +6,10 @@ Tools for collecting RAN KPIs and power metrics.
 
 import random
 from datetime import datetime
-from typing import Dict
+from typing import Any, Dict
 
 
-def collect_ran_kpis(tower_id: str = "tower_1") -> Dict:
+def collect_ran_kpis(tower_id: str = "tower_1") -> Dict[str, Any]:
     """
     Collect Radio Access Network Key Performance Indicators.
 
@@ -35,7 +35,7 @@ def collect_ran_kpis(tower_id: str = "tower_1") -> Dict:
     }
 
 
-def collect_power_metrics(tower_id: str = "tower_1") -> Dict:
+def collect_power_metrics(tower_id: str = "tower_1") -> Dict[str, Any]:
     """
     Collect power consumption metrics from tower equipment.
 
@@ -60,17 +60,26 @@ def collect_power_metrics(tower_id: str = "tower_1") -> Dict:
     }
 
 
-def stream_telemetry(data: Dict, destination: str = "parent_agent") -> Dict:
+def stream_telemetry(
+    data: str = "{}", destination: str = "parent_agent"
+) -> Dict[str, Any]:
     """
     Stream telemetry data to parent agent or monitoring system.
 
     Args:
-        data: Telemetry data to stream
+        data: Telemetry data as JSON string to stream
         destination: Destination for the data
 
     Returns:
         Dict containing streaming status.
     """
+    import json
+
+    try:
+        data_dict = json.loads(data) if isinstance(data, str) else data
+    except json.JSONDecodeError:
+        data_dict = {}
+
     success = random.choice([True, True, True, True, False])  # 80% success rate
 
     return {

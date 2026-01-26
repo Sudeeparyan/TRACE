@@ -6,10 +6,12 @@ Tools for executing control commands on tower equipment.
 
 import random
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
-def shutdown_trx(tower_id: str, trx_ids: List[str], partial: bool = True) -> Dict:
+def shutdown_trx(
+    tower_id: str, trx_ids: List[str], partial: bool = True
+) -> Dict[str, Any]:
     """
     Shutdown transceivers to save energy during low-traffic periods.
 
@@ -58,7 +60,7 @@ def shutdown_trx(tower_id: str, trx_ids: List[str], partial: bool = True) -> Dic
     return result
 
 
-def activate_backup_cells(tower_id: str, cell_count: int = 2) -> Dict:
+def activate_backup_cells(tower_id: str, cell_count: int = 2) -> Dict[str, Any]:
     """
     Activate backup cells to handle traffic surge or congestion.
 
@@ -105,7 +107,7 @@ def activate_backup_cells(tower_id: str, cell_count: int = 2) -> Dict:
     return result
 
 
-def adjust_power_allocation(tower_id: str, target_power_percent: int) -> Dict:
+def adjust_power_allocation(tower_id: str, target_power_percent: int) -> Dict[str, Any]:
     """
     Adjust power allocation dynamically based on demand.
 

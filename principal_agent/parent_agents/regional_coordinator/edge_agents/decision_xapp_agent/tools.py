@@ -6,12 +6,12 @@ Tools for policy-based decision making.
 
 import random
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 def make_energy_decision(
     tower_id: str, current_load: float, forecast_load: float
-) -> Dict:
+) -> Dict[str, Any]:
     """
     Make decision on energy optimization actions based on load conditions.
 
@@ -62,7 +62,7 @@ def make_energy_decision(
 
 def make_congestion_decision(
     tower_id: str, current_load: float, predicted_surge: bool
-) -> Dict:
+) -> Dict[str, Any]:
     """
     Make decision on congestion management actions.
 
@@ -109,17 +109,24 @@ def make_congestion_decision(
     }
 
 
-def evaluate_policy(policy_name: str, context: Dict) -> Dict:
+def evaluate_policy(policy_name: str, context: str = "{}") -> Dict[str, Any]:
     """
     Evaluate a policy against current context and conditions.
 
     Args:
         policy_name: Name of policy to evaluate
-        context: Current context and conditions
+        context: Current context and conditions as JSON string
 
     Returns:
         Dict containing policy evaluation results.
     """
+    import json
+
+    try:
+        context_dict = json.loads(context) if isinstance(context, str) else context
+    except json.JSONDecodeError:
+        context_dict = {}
+
     # Simulate policy evaluation
     compliance = random.choice([True, True, True, False])  # 75% compliance
 

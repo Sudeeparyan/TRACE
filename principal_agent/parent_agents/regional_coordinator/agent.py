@@ -36,7 +36,7 @@ energy_optimization_workflow = SequentialAgent(
 # to avoid parent conflicts (agents are already used in energy_optimization_workflow)
 congestion_management_workflow = Agent(
     name="congestion_management_workflow",
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash",  # Fast model for real-time congestion handling
     description="Congestion Management Workflow - Handles traffic surges and load balancing",
     instruction="""
     You are responsible for managing congestion and traffic surges in the tower network.
@@ -58,7 +58,7 @@ congestion_management_workflow = Agent(
 # Regional Coordinator - Parent Agent
 regional_coordinator = Agent(
     name="regional_coordinator",
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash",  # Fast model for regional coordination
     description="Regional Coordinator - Parent agent managing regional tower clusters",
     instruction="""
     You are a Regional Coordinator Agent for the TRACE system - a Parent agent managing

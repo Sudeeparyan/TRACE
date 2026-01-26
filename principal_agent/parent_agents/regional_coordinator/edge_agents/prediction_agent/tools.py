@@ -6,10 +6,12 @@ Tools for traffic forecasting and pattern analysis.
 
 import random
 from datetime import datetime, timedelta
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
-def forecast_traffic_load(tower_id: str = "tower_1", hours_ahead: int = 4) -> Dict:
+def forecast_traffic_load(
+    tower_id: str = "tower_1", hours_ahead: int = 4
+) -> Dict[str, Any]:
     """
     Forecast traffic load for the specified number of hours ahead.
 
@@ -47,7 +49,9 @@ def forecast_traffic_load(tower_id: str = "tower_1", hours_ahead: int = 4) -> Di
     }
 
 
-def analyze_traffic_patterns(tower_id: str = "tower_1", days_back: int = 7) -> Dict:
+def analyze_traffic_patterns(
+    tower_id: str = "tower_1", days_back: int = 7
+) -> Dict[str, Any]:
     """
     Analyze historical traffic patterns.
 
@@ -77,7 +81,9 @@ def analyze_traffic_patterns(tower_id: str = "tower_1", days_back: int = 7) -> D
     }
 
 
-def predict_surge_events(tower_id: str = "tower_1", hours_ahead: int = 24) -> Dict:
+def predict_surge_events(
+    tower_id: str = "tower_1", hours_ahead: int = 24
+) -> Dict[str, Any]:
     """
     Predict traffic surge events (concerts, emergencies, etc.).
 

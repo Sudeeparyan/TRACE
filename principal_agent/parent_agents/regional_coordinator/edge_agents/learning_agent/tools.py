@@ -6,10 +6,10 @@ Tools for model training, deployment, and performance analysis.
 
 import random
 from datetime import datetime, timedelta
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
-def retrain_model(model_name: str, training_days: int = 7) -> Dict:
+def retrain_model(model_name: str, training_days: int = 7) -> Dict[str, Any]:
     """
     Retrain ML model with recent historical data.
 
@@ -72,7 +72,9 @@ def retrain_model(model_name: str, training_days: int = 7) -> Dict:
     return result
 
 
-def deploy_model(model_name: str, version: str, canary_percent: int = 20) -> Dict:
+def deploy_model(
+    model_name: str, version: str, canary_percent: int = 20
+) -> Dict[str, Any]:
     """
     Deploy model with canary rollout strategy.
 
@@ -140,7 +142,9 @@ def deploy_model(model_name: str, version: str, canary_percent: int = 20) -> Dic
     return result
 
 
-def analyze_performance(component: str = "system", time_window_hours: int = 24) -> Dict:
+def analyze_performance(
+    component: str = "system", time_window_hours: int = 24
+) -> Dict[str, Any]:
     """
     Analyze performance of models and optimization strategies.
 

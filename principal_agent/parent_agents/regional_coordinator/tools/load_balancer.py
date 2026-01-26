@@ -6,10 +6,12 @@ These tools balance load across multiple towers in the region.
 
 import random
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 
-def balance_load(source_towers: List[str], target_towers: List[str] = None) -> Dict:
+def balance_load(
+    source_towers: List[str], target_towers: Optional[List[str]] = None
+) -> Dict[str, Any]:
     """
     Balance load across multiple towers in the region.
 
@@ -63,7 +65,7 @@ def balance_load(source_towers: List[str], target_towers: List[str] = None) -> D
     return result
 
 
-def get_tower_status(tower_id: str) -> Dict:
+def get_tower_status(tower_id: str) -> Dict[str, Any]:
     """
     Get detailed status of a specific tower.
 

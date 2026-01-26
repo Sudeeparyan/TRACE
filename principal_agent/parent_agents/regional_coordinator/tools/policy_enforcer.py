@@ -6,10 +6,10 @@ These tools enforce regional policies and validate actions.
 
 import random
 from datetime import datetime
-from typing import Dict
+from typing import Any, Dict
 
 
-def enforce_policy(policy_name: str, target: str) -> Dict:
+def enforce_policy(policy_name: str, target: str) -> Dict[str, Any]:
     """
     Enforce a specific policy on a target component.
 
@@ -47,23 +47,33 @@ def enforce_policy(policy_name: str, target: str) -> Dict:
     }
 
 
-def validate_action(action_type: str, parameters: Dict) -> Dict:
+def validate_action(action_type: str, parameters: str = "{}") -> Dict[str, Any]:
     """
     Validate an action against policies before execution.
 
     Args:
         action_type: Type of action to validate (e.g., "shutdown_trx", "reroute_traffic")
-        parameters: Action parameters to validate
+        parameters: Action parameters as JSON string to validate
 
     Returns:
         Dict containing validation results.
     """
+    # Parse parameters if needed
+    import json
+
+    try:
+        params_dict = (
+            json.loads(parameters) if isinstance(parameters, str) else parameters
+        )
+    except json.JSONDecodeError:
+        params_dict = {}
+
     # Simulate validation checks
     is_valid = random.choice([True, True, True, False])  # 75% valid rate
 
     result = {
         "action_type": action_type,
-        "parameters": parameters,
+        "parameters": params_dict,
         "timestamp": datetime.now().isoformat(),
         "is_valid": is_valid,
         "validation_checks": [],

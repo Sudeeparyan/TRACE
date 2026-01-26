@@ -11,7 +11,7 @@ from .tools import retrain_model, deploy_model, analyze_performance
 
 learning_agent = Agent(
     name="learning_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3-pro",  # Reasoning model for analysis and learning
     description="Learning Agent - Model training and continuous improvement",
     instruction="""
     You are a Learning Agent for the TRACE system - an Edge Child Agent responsible

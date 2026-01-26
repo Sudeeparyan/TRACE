@@ -11,7 +11,7 @@ from .tools import make_energy_decision, make_congestion_decision, evaluate_poli
 
 decision_xapp_agent = Agent(
     name="decision_xapp_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3-pro",  # Reasoning model for policy decisions
     description="Decision xApp Agent - Policy-based decision making",
     instruction="""
     You are a Decision xApp Agent for the TRACE system - an Edge Child Agent responsible

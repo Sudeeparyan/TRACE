@@ -6,10 +6,10 @@ These tools aggregate telemetry data from multiple Edge Child Agents.
 
 import random
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 
 
-def aggregate_telemetry(tower_ids: List[str] = None) -> Dict:
+def aggregate_telemetry(tower_ids: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Aggregate telemetry data from multiple towers in the region.
 
@@ -47,7 +47,7 @@ def aggregate_telemetry(tower_ids: List[str] = None) -> Dict:
     }
 
 
-def get_regional_metrics(metric_name: str = "all") -> Dict:
+def get_regional_metrics(metric_name: str = "all") -> Dict[str, Any]:
     """
     Get specific regional metrics or all metrics.
 

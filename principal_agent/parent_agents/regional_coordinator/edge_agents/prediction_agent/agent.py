@@ -11,7 +11,7 @@ from .tools import forecast_traffic_load, analyze_traffic_patterns, predict_surg
 
 prediction_agent = Agent(
     name="prediction_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3-pro",  # Reasoning model for complex forecasting
     description="Prediction Agent - Traffic forecasting and demand prediction",
     instruction="""
     You are a Prediction Agent for the TRACE system - an Edge Child Agent responsible

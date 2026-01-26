@@ -11,7 +11,7 @@ from .tools import shutdown_trx, activate_backup_cells, adjust_power_allocation
 
 action_agent = Agent(
     name="action_agent",
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash",  # Fast model for quick action execution
     description="Action Agent - Execute control commands",
     instruction="""
     You are an Action Agent for the TRACE system - an Edge Child Agent responsible

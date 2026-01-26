@@ -1,0 +1,510 @@
+{
+    "metadata": {
+        "description": "TRACE Dashboard Data - All data structures used by the client",
+        "version": "1.0.0",
+        "lastUpdated": "2025-12-01T00:00:00Z"
+    },
+    "telemetry": [
+        {
+            "region": "us-east-1",
+            "timestamp": "2025-12-01T10:00:00Z",
+            "energy": 65.5,
+            "congestion": 45.2,
+            "anomaly_score": 12.8,
+            "traffic_load": 52.3,
+            "trx_utilization": 78.4,
+            "power_draw": 95.6
+        },
+        {
+            "region": "us-east-1",
+            "timestamp": "2025-12-01T10:00:01Z",
+            "energy": 68.2,
+            "congestion": 48.5,
+            "anomaly_score": 15.2,
+            "traffic_load": 55.1,
+            "trx_utilization": 80.2,
+            "power_draw": 98.3
+        },
+        {
+            "region": "us-east-1",
+            "timestamp": "2025-12-01T10:00:02Z",
+            "energy": 62.8,
+            "congestion": 42.1,
+            "anomaly_score": 10.5,
+            "traffic_load": 48.9,
+            "trx_utilization": 75.6,
+            "power_draw": 92.1
+        }
+    ],
+    "activeUsers": [
+        {
+            "region": "us-east-1",
+            "timestamp": "2025-12-01T10:00:00Z",
+            "activeUsers": 12500,
+            "towerCluster": "Tower-3",
+            "lastOptimization": "Load Balancing",
+            "surgeDetected": false
+        },
+        {
+            "region": "us-east-1",
+            "timestamp": "2025-12-01T10:00:02Z",
+            "activeUsers": 13200,
+            "towerCluster": "Tower-5",
+            "lastOptimization": "TRX Optimization",
+            "surgeDetected": true
+        },
+        {
+            "region": "us-east-1",
+            "timestamp": "2025-12-01T10:00:04Z",
+            "activeUsers": 11800,
+            "towerCluster": "Tower-2",
+            "lastOptimization": "None",
+            "surgeDetected": false
+        }
+    ],
+    "issues": [
+        {
+            "id": "issue-1701421200000-001",
+            "title": "High Congestion Detected",
+            "severity": "critical",
+            "description": "Automated detection identified an anomaly requiring attention.",
+            "affectedTowers": [
+                "Tower-3",
+                "Tower-5"
+            ],
+            "impactScore": "78%",
+            "status": "Active",
+            "agentTrace": [
+                "Monitoring",
+                "Prediction",
+                "Decision xApp",
+                "Action",
+                "Learning"
+            ],
+            "activeAgent": "Decision xApp",
+            "suggestedAction": "restart_agent",
+            "detailedAnalysis": "System metrics indicate elevated resource usage patterns. Traffic load exceeded 80% threshold for 5 consecutive minutes.",
+            "remediationSteps": [
+                "Identify root cause from telemetry data",
+                "Execute automated remediation",
+                "Verify system stability",
+                "Update learning model"
+            ],
+            "agentLogs": [
+                {
+                    "timestamp": "2025-12-01T10:00:00Z",
+                    "agent": "Monitoring",
+                    "message": "Anomaly detected in Tower-3 cluster"
+                },
+                {
+                    "timestamp": "2025-12-01T10:00:05Z",
+                    "agent": "Prediction",
+                    "message": "Analyzing traffic trends - 85% confidence of escalation"
+                },
+                {
+                    "timestamp": "2025-12-01T10:00:10Z",
+                    "agent": "Decision xApp",
+                    "message": "Recommending load balancing action"
+                }
+            ]
+        },
+        {
+            "id": "issue-1701421200000-002",
+            "title": "TRX Utilization Exceeded",
+            "severity": "high",
+            "description": "TRX resource utilization has exceeded safe thresholds.",
+            "affectedTowers": [
+                "Tower-7"
+            ],
+            "impactScore": "65%",
+            "status": "Active",
+            "agentTrace": [
+                "Monitoring",
+                "Prediction",
+                "Decision xApp"
+            ],
+            "activeAgent": "Prediction",
+            "suggestedAction": "reroute_traffic",
+            "detailedAnalysis": "TRX utilization at 92% on Tower-7. Neighboring towers have available capacity.",
+            "remediationSteps": [
+                "Analyze neighboring tower capacity",
+                "Initiate traffic redistribution",
+                "Monitor TRX levels post-action",
+                "Log optimization results"
+            ],
+            "agentLogs": [
+                {
+                    "timestamp": "2025-12-01T10:02:00Z",
+                    "agent": "Monitoring",
+                    "message": "TRX threshold breach detected"
+                },
+                {
+                    "timestamp": "2025-12-01T10:02:15Z",
+                    "agent": "Prediction",
+                    "message": "Forecasting continued high utilization for next 30 minutes"
+                }
+            ]
+        },
+        {
+            "id": "issue-1701421200000-003",
+            "title": "Power Anomaly",
+            "severity": "medium",
+            "description": "Unusual power consumption pattern detected.",
+            "affectedTowers": [
+                "Tower-1"
+            ],
+            "impactScore": "42%",
+            "status": "Active",
+            "agentTrace": [
+                "Monitoring"
+            ],
+            "activeAgent": "Monitoring",
+            "suggestedAction": "redeploy_agent",
+            "detailedAnalysis": "Power draw fluctuating beyond normal operating range.",
+            "remediationSteps": [
+                "Check power supply status",
+                "Verify hardware health",
+                "Apply power optimization",
+                "Schedule maintenance if needed"
+            ],
+            "agentLogs": [
+                {
+                    "timestamp": "2025-12-01T10:05:00Z",
+                    "agent": "Monitoring",
+                    "message": "Power consumption anomaly flagged"
+                }
+            ]
+        }
+    ],
+    "resolutions": [
+        {
+            "id": "resolution-1701417600000-001",
+            "timestamp": "2025-12-01T09:00:00Z",
+            "title": "Traffic Rerouting Completed",
+            "summary": "Successfully redistributed 30% traffic from Tower-4 to Tower-6.",
+            "initiatingAgent": "Principal Agent",
+            "actions": [
+                "Analyzed traffic patterns across cluster",
+                "Identified optimal redistribution targets",
+                "Executed gradual traffic rerouting",
+                "Verified network stability post-action"
+            ],
+            "rollbackStatus": "Available",
+            "learningNotes": "Pattern recorded: Peak hour congestion on Tower-4 can be mitigated via Tower-6 offloading.",
+            "confidenceScore": "92%"
+        },
+        {
+            "id": "resolution-1701414000000-002",
+            "timestamp": "2025-12-01T08:00:00Z",
+            "title": "Agent Restart Completed",
+            "summary": "Monitoring agent restarted successfully after memory leak detection.",
+            "initiatingAgent": "Principal Agent",
+            "actions": [
+                "Detected memory utilization exceeding threshold",
+                "Gracefully stopped affected agent",
+                "Cleared cached data",
+                "Restarted agent with fresh state"
+            ],
+            "rollbackStatus": "Not Required",
+            "learningNotes": "Memory leak pattern identified - fix scheduled for next release.",
+            "confidenceScore": "98%"
+        }
+    ],
+    "systemHealth": {
+        "region": "us-east-1",
+        "score": 94.5,
+        "status": "Healthy",
+        "details": {
+            "overall_status": "healthy",
+            "components": {
+                "network": "operational",
+                "compute": "operational",
+                "storage": "operational",
+                "agents": "operational"
+            }
+        },
+        "generated_at": "2025-12-01T10:00:00Z"
+    },
+    "agentStatuses": [
+        {
+            "name": "principal_agent",
+            "status": "active",
+            "uptime_seconds": 86400,
+            "metrics": {
+                "requests_processed": 15420,
+                "success_rate": 99.2
+            },
+            "resource_usage": {
+                "cpu_percent": 12.5,
+                "memory_mb": 256
+            }
+        },
+        {
+            "name": "monitoring_agent",
+            "status": "active",
+            "uptime_seconds": 82800,
+            "metrics": {
+                "events_processed": 45230,
+                "alerts_generated": 156
+            },
+            "resource_usage": {
+                "cpu_percent": 18.3,
+                "memory_mb": 384
+            }
+        },
+        {
+            "name": "prediction_agent",
+            "status": "active",
+            "uptime_seconds": 82800,
+            "metrics": {
+                "predictions_made": 8920,
+                "accuracy_rate": 87.5
+            },
+            "resource_usage": {
+                "cpu_percent": 35.2,
+                "memory_mb": 512
+            }
+        },
+        {
+            "name": "decision_xapp_agent",
+            "status": "active",
+            "uptime_seconds": 82800,
+            "metrics": {
+                "decisions_made": 2340,
+                "actions_recommended": 890
+            },
+            "resource_usage": {
+                "cpu_percent": 22.1,
+                "memory_mb": 320
+            }
+        },
+        {
+            "name": "action_agent",
+            "status": "active",
+            "uptime_seconds": 82800,
+            "metrics": {
+                "actions_executed": 756,
+                "success_rate": 96.8
+            },
+            "resource_usage": {
+                "cpu_percent": 15.8,
+                "memory_mb": 280
+            }
+        },
+        {
+            "name": "learning_agent",
+            "status": "active",
+            "uptime_seconds": 82800,
+            "metrics": {
+                "patterns_learned": 234,
+                "model_updates": 12
+            },
+            "resource_usage": {
+                "cpu_percent": 45.6,
+                "memory_mb": 768
+            }
+        }
+    ],
+    "towerData": [
+        {
+            "timestamp": "2025-10-31T00:25:00+00:00",
+            "region_id": "R-E",
+            "tower_id": "TX005",
+            "agent_id": "agent-tx005",
+            "neighbors": [
+                "TX003",
+                "TX010",
+                "TX008"
+            ],
+            "capacity_users": 1000,
+            "connected_users": 146,
+            "bandwidth_utilization_pct": 20.89,
+            "rsrq_db": -9.61,
+            "packet_loss_pct": 0.432,
+            "latency_ms": 15,
+            "cpu_util_pct": 57.13,
+            "power_voltage_v": 46.12,
+            "event_type": "normal",
+            "tower_radius_km": 2.37,
+            "desired_radius_km": 2.75,
+            "coverage_gap_pct": 20.06,
+            "adjust_radius_action": "expand",
+            "adjust_reason": "coverage_expand",
+            "detected_error": "high_cpu",
+            "detection_confidence": 0.96,
+            "signals_used": [
+                "SINR"
+            ],
+            "action_executed": "expand",
+            "action_reason": "coverage_expand",
+            "healed_now": false,
+            "auto": false,
+            "human_in_loop": true
+        },
+        {
+            "timestamp": "2025-10-31T00:45:00+00:00",
+            "region_id": "R-C",
+            "tower_id": "TX008",
+            "agent_id": "agent-tx008",
+            "neighbors": [
+                "TX010"
+            ],
+            "capacity_users": 2000,
+            "connected_users": 0,
+            "bandwidth_utilization_pct": 59.2,
+            "rsrq_db": -8.38,
+            "packet_loss_pct": 0.0,
+            "latency_ms": 41,
+            "cpu_util_pct": 36.75,
+            "power_voltage_v": 50.41,
+            "event_type": "normal",
+            "tower_radius_km": 0.72,
+            "desired_radius_km": 0.53,
+            "coverage_gap_pct": 26.12,
+            "adjust_radius_action": "hold",
+            "adjust_reason": "no_change",
+            "detected_error": "none",
+            "detection_confidence": 0.24,
+            "signals_used": [],
+            "action_executed": "hold",
+            "action_reason": "no_change",
+            "healed_now": true,
+            "auto": false,
+            "human_in_loop": true
+        },
+        {
+            "timestamp": "2025-10-31T01:00:00+00:00",
+            "region_id": "R-A",
+            "tower_id": "TX001",
+            "agent_id": "agent-tx001",
+            "neighbors": [
+                "TX002",
+                "TX003"
+            ],
+            "capacity_users": 1500,
+            "connected_users": 892,
+            "bandwidth_utilization_pct": 75.4,
+            "rsrq_db": -7.25,
+            "packet_loss_pct": 0.12,
+            "latency_ms": 22,
+            "cpu_util_pct": 68.5,
+            "power_voltage_v": 48.9,
+            "event_type": "high_load",
+            "tower_radius_km": 3.1,
+            "desired_radius_km": 3.0,
+            "coverage_gap_pct": 5.2,
+            "adjust_radius_action": "shrink",
+            "adjust_reason": "load_balance",
+            "detected_error": "none",
+            "detection_confidence": 0.88,
+            "signals_used": [
+                "RSRP",
+                "SINR"
+            ],
+            "action_executed": "shrink",
+            "action_reason": "load_balance",
+            "healed_now": false,
+            "auto": true,
+            "human_in_loop": false
+        }
+    ],
+    "regions": [
+        {
+            "id": "us-east-1",
+            "name": "US East (N. Virginia)",
+            "status": "operational",
+            "towerCount": 45,
+            "activeUsers": 125000
+        },
+        {
+            "id": "us-west-2",
+            "name": "US West (Oregon)",
+            "status": "operational",
+            "towerCount": 38,
+            "activeUsers": 98000
+        },
+        {
+            "id": "eu-central-1",
+            "name": "Europe (Frankfurt)",
+            "status": "degraded",
+            "towerCount": 52,
+            "activeUsers": 142000
+        }
+    ],
+    "optimizationActions": [
+        "Load Balancing",
+        "TRX Optimization",
+        "Energy Saver",
+        "None"
+    ],
+    "remediationActions": [
+        {
+            "id": "restart_agent",
+            "name": "Restart Agent",
+            "description": "Gracefully restart the affected agent to clear cached state"
+        },
+        {
+            "id": "redeploy_agent",
+            "name": "Redeploy Agent",
+            "description": "Fully redeploy the agent with fresh configuration"
+        },
+        {
+            "id": "reroute_traffic",
+            "name": "Reroute Traffic",
+            "description": "Redistribute traffic to neighboring towers with available capacity"
+        }
+    ],
+    "severityLevels": [
+        {
+            "id": "critical",
+            "name": "Critical",
+            "color": "#dc3545",
+            "priority": 1
+        },
+        {
+            "id": "high",
+            "name": "High",
+            "color": "#fd7e14",
+            "priority": 2
+        },
+        {
+            "id": "medium",
+            "name": "Medium",
+            "color": "#ffc107",
+            "priority": 3
+        },
+        {
+            "id": "low",
+            "name": "Low",
+            "color": "#28a745",
+            "priority": 4
+        }
+    ],
+    "agentTraceFlow": [
+        {
+            "step": 1,
+            "agent": "Monitoring",
+            "description": "Detects anomalies and triggers alerts"
+        },
+        {
+            "step": 2,
+            "agent": "Prediction",
+            "description": "Analyzes trends and forecasts impact"
+        },
+        {
+            "step": 3,
+            "agent": "Decision xApp",
+            "description": "Recommends optimal remediation action"
+        },
+        {
+            "step": 4,
+            "agent": "Action",
+            "description": "Executes the approved remediation"
+        },
+        {
+            "step": 5,
+            "agent": "Learning",
+            "description": "Records patterns for future optimization"
+        }
+    ]
+}

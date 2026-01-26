@@ -12,7 +12,7 @@ from .tools import collect_ran_kpis, collect_power_metrics, stream_telemetry
 
 monitoring_agent = Agent(
     name="monitoring_agent",
-    model="gemini-2.5-flash",
+    model="gemini-2.0-flash",  # Fast model for real-time monitoring
     description="Monitoring Agent - Real-time data collection and streaming",
     instruction="""
     You are a Monitoring Agent for the TRACE system - an Edge Child Agent responsible
