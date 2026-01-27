@@ -1,8 +1,21 @@
-flask==3.0.0
-flask-cors==4.0.0
-flask-socketio==5.3.5
-python-socketio==5.10.0
-python-engineio==4.8.0
+# TRACE Dashboard Server Dependencies
+# Flask and WebSocket
+flask>=3.0.0
+flask-cors>=4.0.0
+flask-socketio>=5.3.5
+python-socketio>=5.10.0
+python-engineio>=4.8.0
+eventlet>=0.33.0
 
-# For Principal Agent Integration (optional - gracefully handled if not installed)
-# google-adk>=0.1.0
+# Google Agent Development Kit (ADK) for Principal Agent Integration
+google-adk>=1.0.0
+
+# Environment and Configuration
+python-dotenv>=1.0.0
+
+# Async Support
+aiohttp>=3.9.0
+asyncio-throttle>=1.0.0
+
+# Date/Time utilities
+python-dateutil>=2.8.0

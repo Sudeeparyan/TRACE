@@ -1,4 +1,3 @@
-
 """
 TRACE Dashboard Backend Server
 Provides WebSocket streaming and REST API endpoints for the React dashboard
@@ -279,5 +278,7 @@ if __name__ == "__main__":
     socketio.start_background_task(stream_data)
 
     # Run the server
+    # Note: use_reloader=False prevents infinite restarts from watchdog detecting
+    # changes in other venv directories outside the project
     print("Starting TRACE Dashboard Backend on http://localhost:8000")
-    socketio.run(app, host="0.0.0.0", port=8000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=8000, debug=True, use_reloader=False)
