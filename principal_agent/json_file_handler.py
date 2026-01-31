@@ -7,11 +7,32 @@ to text format, fixing the Gemini API error:
 
 The handler intercepts Content objects before they reach the LLM and converts
 inline JSON files to formatted text.
+
+Enhanced with direct Gemini AI integration for JSON data analysis.
 """
 
 import json
 import base64
-from typing import Optional
+import os
+import sys
+from typing import Optional, Any, Dict
+
+# Add paths for imports
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(CURRENT_DIR)
+CLIENT_SERVER_DIR = os.path.join(ROOT_DIR, "client", "server")
+
+for path in [ROOT_DIR, CLIENT_SERVER_DIR]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# Try to import Gemini Service
+try:
+    from gemini_service import gemini_service, GEMINI_AVAILABLE
+except ImportError:
+    GEMINI_AVAILABLE = False
+    gemini_service = None
+
 from google.genai import types
 
 
@@ -187,3 +208,135 @@ def should_preprocess_content(content) -> bool:
                 return True
 
     return False
+
+
+# =============================================================================
+# Gemini AI Integration for JSON Analysis
+# =============================================================================
+
+
+def analyze_json_data_with_llm(
+    json_data: Any,
+    query: str = "comprehensive analysis",
+    analysis_type: str = "comprehensive",
+) -> Dict[str, Any]:
+    """
+    Analyze JSON data using Gemini AI.
+
+    This function connects to the Gemini service for real AI-powered analysis
+    of network telemetry and other JSON data.
+
+    Args:
+        json_data: Parsed JSON data (list or dict)
+        query: Specific analysis query or question
+        analysis_type: Type of analysis ('comprehensive', 'energy', 'congestion', 'health')
+
+    Returns:
+        Dict containing:
+        - success: bool
+        - analysis: str (AI-generated analysis)
+        - source: str ('gemini' or 'fallback')
+        - timestamp: str
+    """
+    if GEMINI_AVAILABLE and gemini_service:
+        try:
+            # Use Gemini service for AI analysis
+            result = gemini_service.analyze_json_data(json_data, query)
+            return result
+        except Exception as e:
+            print(f"Gemini JSON analysis failed: {e}")
+
+    # Fallback response when Gemini is not available
+    record_count = len(json_data) if isinstance(json_data, list) else 1
+
+    # Build a basic analysis without AI
+    analysis = f"""## JSON Data Analysis (Fallback Mode)
+
+**Data Overview:**
+- Records: {record_count}
+- Query: {query}
+
+**Basic Statistics:**
+"""
+
+    if isinstance(json_data, list) and json_data:
+        sample = json_data[0] if json_data else {}
+        if isinstance(sample, dict):
+            analysis += f"- Fields: {', '.join(sample.keys())}\n"
+
+            # Try to extract some numeric stats
+            for key in sample.keys():
+                try:
+                    values = [
+                        r.get(key)
+                        for r in json_data
+                        if isinstance(r.get(key), (int, float))
+                    ]
+                    if values:
+                        avg = sum(values) / len(values)
+                        analysis += f"- {key}: avg={avg:.2f}, min={min(values):.2f}, max={max(values):.2f}\n"
+                except:
+                    pass
+
+    analysis += "\n**Note:** Connect Gemini API for full AI-powered analysis."
+
+    from datetime import datetime
+
+    return {
+        "success": True,
+        "analysis": analysis,
+        "query": query,
+        "data_records": record_count,
+        "source": "fallback",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+def get_recommendations_from_json(
+    json_data: Any, focus_area: str = "general"
+) -> Dict[str, Any]:
+    """
+    Get AI-powered recommendations based on JSON telemetry data.
+
+    Args:
+        json_data: Network telemetry data
+        focus_area: Area to focus on ('energy', 'congestion', 'health', 'general')
+
+    Returns:
+        Dict with recommendations
+    """
+    query_map = {
+        "energy": "Analyze this data for energy optimization opportunities. What towers can reduce power consumption? What TRX optimizations are possible?",
+        "congestion": "Analyze this data for congestion patterns. What are the peak traffic times? Which towers need load balancing?",
+        "health": "Analyze this data for health issues. What anomalies exist? What preventive maintenance is needed?",
+        "general": "Provide comprehensive recommendations for network optimization based on this telemetry data.",
+    }
+
+    query = query_map.get(focus_area, query_map["general"])
+    return analyze_json_data_with_llm(json_data, query, focus_area)
+
+
+def compare_json_datasets(
+    dataset1: Any,
+    dataset2: Any,
+    comparison_query: str = "Compare these two datasets and highlight differences",
+) -> Dict[str, Any]:
+    """
+    Compare two JSON datasets using AI analysis.
+
+    Args:
+        dataset1: First dataset
+        dataset2: Second dataset
+        comparison_query: Specific comparison question
+
+    Returns:
+        Dict with comparison analysis
+    """
+    combined_data = {
+        "dataset1": dataset1[:5] if isinstance(dataset1, list) else dataset1,
+        "dataset2": dataset2[:5] if isinstance(dataset2, list) else dataset2,
+        "dataset1_count": len(dataset1) if isinstance(dataset1, list) else 1,
+        "dataset2_count": len(dataset2) if isinstance(dataset2, list) else 1,
+    }
+
+    return analyze_json_data_with_llm(combined_data, comparison_query, "comprehensive")

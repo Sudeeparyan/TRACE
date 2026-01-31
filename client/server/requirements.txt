@@ -10,6 +10,9 @@ eventlet>=0.33.0
 # Google Agent Development Kit (ADK) for Principal Agent Integration
 google-adk>=1.0.0
 
+# Google Generative AI (Gemini) for direct AI integration
+google-generativeai>=0.8.0
+
 # Environment and Configuration
 python-dotenv>=1.0.0
 

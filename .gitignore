@@ -1,26 +1,23 @@
 # Virtual environments
-.venv
-
-# Environment files
+.venv/
+venv/
+env/
+.venv2
+# Environment files (keep .env.example for reference)
 .env
-.env.example
 
 # Dependencies
-node_modules
-package-lock.json
+node_modules/
 
 # Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyo
+.pytest_cache/
 
-# Reference/unused folders
-referance/
-trace_aws_production/
-test_data/
-research_paper/
-markdowns/
+# ADK cache
+.adk/
 
 # IDE/Editor
 .vscode/
@@ -39,3 +36,9 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Test files
+test_*.py
+*_test.py
+
+extrafiles

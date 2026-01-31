@@ -5,13 +5,23 @@ Provides WebSocket streaming and REST API endpoints for the React dashboard
 Integrated with Principal Agent (ADK Framework) for AI-powered auto-remediation.
 """
 
+import sys
+import os
+
+# Fix Windows console encoding for emoji support - must be done first
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
 import time
+import random
 from datetime import datetime
-import sys
-import os
 import json
 
 # Add project paths for shared imports
@@ -24,6 +34,17 @@ for path in (CLIENT_DIR, ROOT_DIR):
 
 from principal_agent_bridge import PrincipalAgentBridge
 from agent_integration import agent_integration
+
+# Try to import Bedrock service for AWS mode
+try:
+    import bedrock_service
+    BEDROCK_AVAILABLE = bedrock_service.is_available()
+except ImportError:
+    BEDROCK_AVAILABLE = False
+    bedrock_service = None
+
+# Determine AI backend
+AI_BACKEND = os.getenv('TRACE_AI_BACKEND', 'auto')  # 'auto', 'bedrock', 'gemini'
 
 app = Flask(__name__)
 CORS(app)
@@ -45,6 +66,15 @@ print(
 )
 print(
     f"  ADK Framework:   {'✅ Available' if integration_status['adk_available'] else '❌ Not Available'}"
+)
+print(
+    f"  Gemini AI:       {'✅ Available' if integration_status.get('gemini_available') else '❌ Not Available'}"
+)
+print(
+    f"  AWS Bedrock:     {'✅ Available' if BEDROCK_AVAILABLE else '❌ Not Available'}"
+)
+print(
+    f"  AI Backend:      {AI_BACKEND.upper()} {'(using Bedrock)' if BEDROCK_AVAILABLE and AI_BACKEND in ['auto', 'bedrock'] else '(using Gemini)' if integration_status.get('gemini_available') else '(fallback)'}"
 )
 print(f"  Mode:            {integration_status['mode'].upper()}")
 print("=" * 60 + "\n")
@@ -75,9 +105,71 @@ def get_active_users(region):
 
 @app.route("/api/issues", methods=["GET"])
 def get_issues():
-    """Get active issues"""
+    """Get active issues (only non-resolved issues)"""
     region = request.args.get("region", "us-east-1")
     return jsonify(bridge.get_issues(region))
+
+
+@app.route("/api/issues/seed", methods=["POST"])
+def seed_issues():
+    """Seed initial issues for testing or startup"""
+    data = request.json or {}
+    region = data.get("region", "us-east-1")
+    count = data.get("count", 2)
+    return jsonify(bridge.seed_initial_issues(region, count))
+
+
+@app.route("/api/issues/create", methods=["POST"])
+def force_create_issue():
+    """
+    Force create a new issue immediately (for demo purposes).
+    This bypasses probability checks and creates an issue right away.
+
+    Request body:
+    - region: The region for the issue (default: us-east-1)
+    - severity: critical, high, or medium (optional)
+    - issue_type: partial match for issue type name (optional)
+
+    The created issue will be emitted via WebSocket to all connected clients.
+    """
+    data = request.json or {}
+    region = data.get("region", "us-east-1")
+    severity = data.get("severity")
+    issue_type = data.get("issue_type")
+
+    issue = bridge.force_create_issue(region, severity, issue_type)
+
+    if issue:
+        # Emit to all connected clients immediately
+        socketio.emit("issue", issue, room=region)
+        return jsonify({"success": True, "issue": issue})
+    else:
+        return jsonify({"success": False, "error": "Could not create issue"}), 500
+
+
+@app.route("/api/demo/mode", methods=["POST"])
+def set_demo_mode():
+    """
+    Configure demo mode settings.
+
+    Request body:
+    - enabled: true/false to enable/disable demo mode
+    - auto_heal: true/false to enable/disable auto-healing
+    - interval: seconds between auto-generated issues
+    """
+    data = request.json or {}
+    enabled = data.get("enabled", True)
+    auto_heal = data.get("auto_heal", True)
+    interval = data.get("interval", 10)
+
+    result = bridge.set_demo_mode(enabled, auto_heal, interval)
+    return jsonify({"success": True, **result})
+
+
+@app.route("/api/demo/status", methods=["GET"])
+def get_demo_status():
+    """Get current demo mode status."""
+    return jsonify(bridge.get_demo_status())
 
 
 @app.route("/api/remediation/trigger", methods=["POST"])
@@ -117,6 +209,7 @@ def trigger_remediation():
     # Merge results - prefer agent response
     resolution["agent_response"] = agent_result.get("agent_response")
     resolution["source"] = agent_result.get("source", "fallback")
+    resolution["issueId"] = issue_id  # Include issueId for frontend removal
 
     # Emit resolution event to connected clients
     socketio.emit("resolution", resolution)
@@ -193,6 +286,105 @@ def chat():
     return jsonify(result)
 
 
+@app.route("/api/chat/stream", methods=["POST"])
+def chat_stream():
+    """
+    Streaming chat endpoint for real-time AI responses.
+
+    Uses Server-Sent Events (SSE) for streaming the response.
+    """
+    from flask import Response, stream_with_context
+
+    data = request.json
+    message = data.get("message", "")
+    context = data.get("context", "trace_dashboard")
+
+    if not message:
+        return jsonify({"success": False, "error": "Message is required"}), 400
+
+    # Try to use Gemini streaming
+    try:
+        from gemini_service import gemini_service, GEMINI_AVAILABLE
+
+        if GEMINI_AVAILABLE and gemini_service:
+
+            def generate():
+                yield 'data: {"type": "start"}\n\n'
+
+                full_response = ""
+                for chunk in gemini_service.chat_stream(message, context):
+                    full_response += chunk
+                    yield f"data: {json.dumps({'type': 'chunk', 'content': chunk})}\n\n"
+
+                yield f"data: {json.dumps({'type': 'end', 'full_response': full_response})}\n\n"
+
+            return Response(
+                stream_with_context(generate()),
+                mimetype="text/event-stream",
+                headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            )
+    except ImportError:
+        pass
+
+    # Fallback to regular chat
+    result = agent_integration.chat(message, context)
+    return jsonify(result)
+
+
+@app.route("/api/telemetry/analyze", methods=["POST"])
+def analyze_telemetry():
+    """
+    Analyze telemetry data using AI.
+    """
+    data = request.json
+    telemetry = data.get("telemetry", {})
+    analysis_type = data.get("analysis_type", "comprehensive")
+
+    try:
+        from gemini_service import gemini_service, GEMINI_AVAILABLE
+
+        if GEMINI_AVAILABLE and gemini_service:
+            result = gemini_service.analyze_telemetry(telemetry, analysis_type)
+            return jsonify(result)
+    except ImportError:
+        pass
+
+    return jsonify(
+        {
+            "success": False,
+            "error": "AI analysis not available",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    )
+
+
+@app.route("/api/json/analyze", methods=["POST"])
+def analyze_json():
+    """
+    Analyze uploaded JSON data using AI.
+    """
+    data = request.json
+    json_data = data.get("data", [])
+    query = data.get("query", "comprehensive analysis")
+
+    try:
+        from gemini_service import gemini_service, GEMINI_AVAILABLE
+
+        if GEMINI_AVAILABLE and gemini_service:
+            result = gemini_service.analyze_json_data(json_data, query)
+            return jsonify(result)
+    except ImportError:
+        pass
+
+    return jsonify(
+        {
+            "success": False,
+            "error": "AI analysis not available",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    )
+
+
 @app.route("/api/resolutions", methods=["GET"])
 def get_resolutions():
     """Get resolution history"""
@@ -242,6 +434,8 @@ def handle_subscribe(data):
 # Background task to stream data
 def stream_data():
     """Stream telemetry data to all connected clients"""
+    issue_counter = {}  # Track when to generate issues per region
+
     while True:
         socketio.sleep(1)
 
@@ -266,11 +460,66 @@ def stream_data():
                     room=region,
                 )
 
-            # Send random issues (every 30 seconds)
-            if current_second % 30 == 0:
-                issue = bridge.maybe_new_issue(region)
-                if issue:
-                    socketio.emit("issue", issue, room=region)
+            # Demo mode: more frequent issue generation
+            if bridge.demo_mode:
+                # Initialize counter for region
+                if region not in issue_counter:
+                    issue_counter[region] = 0
+                issue_counter[region] += 1
+
+                # Generate issue based on demo interval
+                if issue_counter[region] >= bridge.demo_issue_interval:
+                    issue_counter[region] = 0
+                    # Higher probability in demo mode (70%)
+                    if random.random() < 0.7:
+                        issue = bridge.maybe_new_issue(region)
+                        if issue:
+                            print(
+                                f"🚨 Demo mode: Generated issue '{issue.get('title')}' for {region}"
+                            )
+                            socketio.emit("issue", issue, room=region)
+
+                # Check for auto-healing
+                if bridge.auto_heal_enabled:
+                    issue_id_to_heal = bridge.check_auto_heal(region)
+                    if issue_id_to_heal:
+                        print(f"🔧 Auto-healing issue {issue_id_to_heal} in {region}")
+                        # Trigger auto-remediation through the agent integration
+                        issues = bridge.get_issues(region)
+                        issue = next(
+                            (i for i in issues if i.get("id") == issue_id_to_heal), None
+                        )
+
+                        if issue:
+                            action = issue.get("suggestedAction", "restart_agent")
+                            # Use agent integration for AI-powered auto-remediation
+                            agent_result = agent_integration.auto_remediate(
+                                issue, action
+                            )
+                            bridge_result, resolution = bridge.trigger_remediation(
+                                issue_id_to_heal, action
+                            )
+
+                            resolution["agent_response"] = agent_result.get(
+                                "agent_response"
+                            )
+                            resolution["source"] = agent_result.get(
+                                "source", "auto_heal"
+                            )
+                            resolution["issueId"] = issue_id_to_heal
+                            resolution["auto_healed"] = True
+
+                            # Emit resolution to all clients
+                            socketio.emit("resolution", resolution, room=region)
+                            print(
+                                f"✅ Auto-healed issue {issue_id_to_heal}: {resolution.get('summary')}"
+                            )
+            else:
+                # Normal mode: Send random issues (every 30 seconds)
+                if current_second % 30 == 0:
+                    issue = bridge.maybe_new_issue(region)
+                    if issue:
+                        socketio.emit("issue", issue, room=region)
 
 
 if __name__ == "__main__":

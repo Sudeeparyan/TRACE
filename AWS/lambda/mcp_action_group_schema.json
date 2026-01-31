@@ -1,0 +1,494 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "TRACE MCP Tools API",
+    "description": "MCP-style tools for TRACE telecom network management",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/telemetry/tower": {
+      "post": {
+        "operationId": "get_tower_telemetry",
+        "summary": "Get real-time telemetry metrics for towers",
+        "description": "Returns CPU, memory, latency, power consumption, and status for specified tower or all towers",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID (e.g., tower-001). If not provided, returns all towers."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tower telemetry data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/telemetry/anomalies": {
+      "post": {
+        "operationId": "detect_tower_anomalies",
+        "summary": "Detect anomalies in tower metrics",
+        "description": "Analyzes tower metrics and returns any anomalies (high CPU, high latency, high power, etc.)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID to check. If not provided, checks all towers."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of detected anomalies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/telemetry/health": {
+      "post": {
+        "operationId": "get_network_health_summary",
+        "summary": "Get overall network health summary",
+        "description": "Returns aggregated health metrics across all towers including healthy/warning/critical counts",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Network health summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/tower": {
+      "post": {
+        "operationId": "get_tower_config",
+        "summary": "Get tower configuration",
+        "description": "Returns configuration for a tower including TRX count, power mode, and capacity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID to get config for"
+                  }
+                },
+                "required": ["tower_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tower configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/power-mode": {
+      "post": {
+        "operationId": "set_power_mode",
+        "summary": "Set tower power mode for energy optimization",
+        "description": "Sets the power mode (normal, eco, aggressive_eco) for a tower to optimize energy consumption",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID to configure"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": ["normal", "eco", "aggressive_eco"],
+                    "description": "Power mode: normal (full power), eco (reduced power), aggressive_eco (minimum power)"
+                  }
+                },
+                "required": ["tower_id", "mode"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Power mode update result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/trx": {
+      "post": {
+        "operationId": "set_active_trx",
+        "summary": "Set number of active TRX units",
+        "description": "Controls how many TRX (transceiver) units are active. Shutting down unused TRX saves 30-40% energy.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID to configure"
+                  },
+                  "active_trx": {
+                    "type": "integer",
+                    "description": "Number of TRX units to keep active (1-8)"
+                  }
+                },
+                "required": ["tower_id", "active_trx"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "TRX configuration result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/warm-spare": {
+      "post": {
+        "operationId": "activate_warm_spare",
+        "summary": "Activate warm-spare tower for congestion handling",
+        "description": "Activates a nearby warm-spare tower to handle overflow traffic during congestion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Primary tower ID experiencing congestion"
+                  },
+                  "spare_tower_id": {
+                    "type": "string",
+                    "description": "Warm-spare tower ID to activate"
+                  }
+                },
+                "required": ["tower_id", "spare_tower_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Warm-spare activation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/energy/status": {
+      "post": {
+        "operationId": "get_energy_status",
+        "summary": "Get energy consumption status",
+        "description": "Returns current energy consumption, savings achieved, and optimization opportunities",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID. If not provided, returns network-wide status."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Energy status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/energy/recommendations": {
+      "post": {
+        "operationId": "get_energy_recommendations",
+        "summary": "Get energy optimization recommendations",
+        "description": "Analyzes network and returns actionable recommendations to reduce energy by 30-40%",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Energy recommendations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/energy/optimize": {
+      "post": {
+        "operationId": "execute_energy_optimization",
+        "summary": "Execute energy optimization action",
+        "description": "Executes an energy optimization action such as TRX shutdown or ECO mode activation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "optimization_type": {
+                    "type": "string",
+                    "enum": ["trx_shutdown", "eco_mode", "load_balancing"],
+                    "description": "Type of optimization to execute"
+                  },
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID to optimize"
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "description": "Additional parameters for the optimization"
+                  }
+                },
+                "required": ["optimization_type", "tower_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Optimization result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/policy/get": {
+      "post": {
+        "operationId": "get_policy",
+        "summary": "Get remediation policy for an issue type",
+        "description": "Returns the remediation policy and steps for handling a specific issue type",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "issue_type": {
+                    "type": "string",
+                    "enum": ["HIGH_CPU", "HIGH_LATENCY", "TOWER_DOWN", "CONGESTION", "HIGH_POWER"],
+                    "description": "Type of issue to get policy for"
+                  }
+                },
+                "required": ["issue_type"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remediation policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/policy/remediate": {
+      "post": {
+        "operationId": "execute_remediation",
+        "summary": "Execute remediation action",
+        "description": "Executes a remediation action for a detected issue. May require human approval for critical actions.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tower_id": {
+                    "type": "string",
+                    "description": "Tower ID with the issue"
+                  },
+                  "issue_type": {
+                    "type": "string",
+                    "description": "Type of issue to remediate"
+                  },
+                  "action": {
+                    "type": "string",
+                    "description": "Remediation action to execute"
+                  }
+                },
+                "required": ["tower_id", "issue_type", "action"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remediation result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/policy/status": {
+      "post": {
+        "operationId": "get_remediation_status",
+        "summary": "Get remediation action status",
+        "description": "Returns the status of a remediation action that was executed",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "remediation_id": {
+                    "type": "string",
+                    "description": "Remediation ID to check status for"
+                  }
+                },
+                "required": ["remediation_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remediation status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -15,6 +15,7 @@ import ActiveUsersStream from './ActiveUsersStream';
 import IssueCommandCenter from './IssueCommandCenter';
 import ResolutionTimeline from './ResolutionTimeline';
 import { WebSocketService } from '../services/websocket';
+import { dashboardAPI } from '../services/api';
 
 console.log('Dashboard.jsx: Module loaded');
 
@@ -32,6 +33,18 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
 
+  // Fetch initial issues from API
+  const fetchInitialIssues = useCallback(async (region) => {
+    try {
+      const response = await dashboardAPI.getIssues(region);
+      const fetchedIssues = response.data || [];
+      console.log('Dashboard: Fetched initial issues:', fetchedIssues.length);
+      setIssues(fetchedIssues.filter(i => i.status !== 'Resolved'));
+    } catch (error) {
+      console.error('Dashboard: Failed to fetch initial issues:', error);
+    }
+  }, []);
+
   useEffect(() => {
     console.log('Dashboard: useEffect - Initializing WebSocket...');
     const ws = WebSocketService.getInstance();
@@ -41,6 +54,8 @@ function Dashboard() {
         console.log('Dashboard: WebSocket connected successfully');
         setIsConnected(true);
         ws.subscribeToRegion(selectedRegion);
+        // Fetch initial issues after connection
+        fetchInitialIssues(selectedRegion);
       });
 
       ws.on('telemetry', (data) => {
@@ -55,13 +70,24 @@ function Dashboard() {
 
       ws.on('issue', (data) => {
         console.log('Dashboard: Received issue', data);
-        setIssues(prev => [data, ...prev]);
+        // Deduplicate: only add if not already present (by id or title)
+        setIssues(prev => {
+          const exists = prev.some(i => i.id === data.id || i.title === data.title);
+          if (exists || data.status === 'Resolved') {
+            return prev;
+          }
+          return [data, ...prev];
+        });
       });
 
       ws.on('resolution', (data) => {
         console.log('Dashboard: Received resolution', data);
         setResolutions(prev => [data, ...prev]);
         setLastRemediation(data.summary);
+        // Remove resolved issue from active issues
+        if (data.issueId) {
+          setIssues(prev => prev.filter(i => i.id !== data.issueId));
+        }
       });
 
       ws.on('health', (data) => {
@@ -77,7 +103,7 @@ function Dashboard() {
     } catch (error) {
       console.error('Dashboard: Error setting up WebSocket:', error);
     }
-  }, [selectedRegion]);
+  }, [selectedRegion, fetchInitialIssues]);
 
   const handleRegionChange = (region) => {
     setSelectedRegion(region);

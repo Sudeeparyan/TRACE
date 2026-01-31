@@ -23,6 +23,19 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor
 
+# Fix Windows console encoding for emoji support
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+# Load environment variables
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Add project root to path for principal_agent imports
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 CLIENT_DIR = os.path.dirname(CURRENT_DIR)
@@ -68,6 +81,18 @@ try:
     print("✅ Google ADK available - Full agent interaction enabled")
 except ImportError as e:
     print(f"⚠️ Google ADK not available: {e}")
+
+# Import Gemini Service for direct AI integration
+try:
+    from gemini_service import gemini_service, GeminiService
+
+    GEMINI_AVAILABLE = gemini_service.is_available()
+    if GEMINI_AVAILABLE:
+        print("✅ Gemini Service available - Direct AI responses enabled")
+except ImportError as e:
+    GEMINI_AVAILABLE = False
+    gemini_service = None
+    print(f"⚠️ Gemini Service not available: {e}")
 
 
 class AgentIntegration:
@@ -116,6 +141,11 @@ class AgentIntegration:
         """
         Send an issue to the principal agent for AI analysis.
 
+        Priority:
+        1. ADK Runner (full agent with tools)
+        2. Gemini Service (direct AI analysis)
+        3. Fallback (hardcoded analysis)
+
         Args:
             issue: The issue data from the dashboard
 
@@ -123,6 +153,18 @@ class AgentIntegration:
             Analysis result with recommendations
         """
         if not self._initialized:
+            # Try Gemini Service for AI analysis
+            if GEMINI_AVAILABLE and gemini_service:
+                try:
+                    result = gemini_service.get_recommendations(issue)
+                    return {
+                        "success": result.get("success", True),
+                        "analysis": result.get("recommendations", ""),
+                        "source": "gemini",
+                        "timestamp": datetime.utcnow().isoformat(),
+                    }
+                except Exception as e:
+                    print(f"Gemini analysis failed: {e}")
             return self._fallback_analysis(issue)
 
         try:
@@ -299,6 +341,11 @@ class AgentIntegration:
         """
         Send a chat message to the Principal Agent and get a response.
 
+        Priority:
+        1. ADK Runner (if initialized) - Full agent with tools
+        2. Gemini Service (if available) - Direct AI responses
+        3. Fallback responses (hardcoded)
+
         Args:
             message: The user's message
             context: The context of the chat (e.g., 'trace_dashboard', 'general')
@@ -306,7 +353,14 @@ class AgentIntegration:
         Returns:
             Response from the agent
         """
+        # Try ADK Runner first (full agent with tools)
         if not self._initialized:
+            # Try Gemini Service as secondary option
+            if GEMINI_AVAILABLE and gemini_service:
+                try:
+                    return await gemini_service.chat_async(message, context)
+                except Exception as e:
+                    print(f"Gemini chat failed, using fallback: {e}")
             return self._fallback_chat(message, context)
 
         try:
@@ -393,7 +447,20 @@ Dashboard Context: {context}
 Respond helpfully and professionally as the TRACE Principal Agent."""
 
     def _fallback_chat(self, message: str, context: str) -> Dict[str, Any]:
-        """Provide comprehensive fallback chat response when agent is not available."""
+        """
+        Provide chat response when ADK agent is not available.
+
+        First tries Gemini Service for real AI responses,
+        then falls back to hardcoded responses if Gemini is unavailable.
+        """
+        # Try Gemini Service first for real AI responses
+        if GEMINI_AVAILABLE and gemini_service:
+            try:
+                return gemini_service.chat(message, context)
+            except Exception as e:
+                print(f"Gemini fallback failed: {e}")
+
+        # Hardcoded fallback responses (only if Gemini unavailable)
         msg_lower = message.lower()
 
         if any(word in msg_lower for word in ["health", "status", "check", "overview"]):
@@ -735,15 +802,22 @@ Start with: adk web
 
     def get_status(self) -> Dict[str, Any]:
         """Get the integration status."""
+        # Determine mode based on available services
+        if self._initialized:
+            mode = "integrated"  # Full ADK agent
+        elif GEMINI_AVAILABLE:
+            mode = "gemini"  # Direct Gemini AI
+        elif PRINCIPAL_AGENT_AVAILABLE:
+            mode = "tools_only"  # Direct tool execution
+        else:
+            mode = "fallback"  # Hardcoded responses
+
         return {
             "principal_agent_available": PRINCIPAL_AGENT_AVAILABLE,
             "adk_available": ADK_AVAILABLE,
+            "gemini_available": GEMINI_AVAILABLE,
             "fully_initialized": self._initialized,
-            "mode": (
-                "integrated"
-                if self._initialized
-                else ("tools_only" if PRINCIPAL_AGENT_AVAILABLE else "fallback")
-            ),
+            "mode": mode,
         }
 
 

@@ -1,0 +1,353 @@
+{
+    "Comment": "TRACE Self-Healing Workflow - Automated remediation for tower issues",
+    "StartAt": "ValidateAlert",
+    "States": {
+        "ValidateAlert": {
+            "Type": "Task",
+            "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-HealthMonitor-${ENVIRONMENT}",
+            "Parameters": {
+                "action": "validate_alert",
+                "alert.$": "$.alert",
+                "tower_id.$": "$.tower_id"
+            },
+            "ResultPath": "$.validation",
+            "Next": "CheckAlertValidity",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2
+                }
+            ],
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "ResultPath": "$.error",
+                    "Next": "NotifyFailure"
+                }
+            ]
+        },
+        "CheckAlertValidity": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.validation.is_valid",
+                    "BooleanEquals": true,
+                    "Next": "DetermineAlertSeverity"
+                },
+                {
+                    "Variable": "$.validation.is_valid",
+                    "BooleanEquals": false,
+                    "Next": "LogFalsePositive"
+                }
+            ],
+            "Default": "LogFalsePositive"
+        },
+        "LogFalsePositive": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:putItem",
+            "Parameters": {
+                "TableName": "TRACE-IncidentLog-${ENVIRONMENT}",
+                "Item": {
+                    "incident_id": {
+                        "S.$": "$.alert.alert_id"
+                    },
+                    "timestamp": {
+                        "S.$": "$$.State.EnteredTime"
+                    },
+                    "tower_id": {
+                        "S.$": "$.tower_id"
+                    },
+                    "status": {
+                        "S": "false_positive"
+                    },
+                    "details": {
+                        "S.$": "States.JsonToString($.validation)"
+                    }
+                }
+            },
+            "End": true
+        },
+        "DetermineAlertSeverity": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.alert.severity",
+                    "StringEquals": "critical",
+                    "Next": "HandleCriticalAlert"
+                },
+                {
+                    "Variable": "$.alert.severity",
+                    "StringEquals": "warning",
+                    "Next": "HandleWarningAlert"
+                }
+            ],
+            "Default": "HandleWarningAlert"
+        },
+        "HandleCriticalAlert": {
+            "Type": "Parallel",
+            "Branches": [
+                {
+                    "StartAt": "ImmediateRemediation",
+                    "States": {
+                        "ImmediateRemediation": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Remediation-${ENVIRONMENT}",
+                            "Parameters": {
+                                "action": "auto_remediate",
+                                "tower_id.$": "$.tower_id",
+                                "alert_type.$": "$.alert.alert_type",
+                                "priority": "critical"
+                            },
+                            "End": true
+                        }
+                    }
+                },
+                {
+                    "StartAt": "NotifyOncall",
+                    "States": {
+                        "NotifyOncall": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:states:::sns:publish",
+                            "Parameters": {
+                                "TopicArn": "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:TRACE-Alerts-${ENVIRONMENT}",
+                                "Message.$": "States.Format('CRITICAL ALERT: Tower {} - {}', $.tower_id, $.alert.message)",
+                                "Subject": "TRACE Critical Alert",
+                                "MessageAttributes": {
+                                    "severity": {
+                                        "DataType": "String",
+                                        "StringValue": "critical"
+                                    }
+                                }
+                            },
+                            "End": true
+                        }
+                    }
+                }
+            ],
+            "ResultPath": "$.critical_response",
+            "Next": "VerifyRemediation"
+        },
+        "HandleWarningAlert": {
+            "Type": "Task",
+            "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Remediation-${ENVIRONMENT}",
+            "Parameters": {
+                "action": "auto_remediate",
+                "tower_id.$": "$.tower_id",
+                "alert_type.$": "$.alert.alert_type",
+                "priority": "warning"
+            },
+            "ResultPath": "$.warning_response",
+            "Next": "VerifyRemediation",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException"
+                    ],
+                    "IntervalSeconds": 5,
+                    "MaxAttempts": 2
+                }
+            ]
+        },
+        "VerifyRemediation": {
+            "Type": "Wait",
+            "Seconds": 30,
+            "Next": "CheckTowerHealth"
+        },
+        "CheckTowerHealth": {
+            "Type": "Task",
+            "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-HealthMonitor-${ENVIRONMENT}",
+            "Parameters": {
+                "action": "get_tower_health",
+                "tower_id.$": "$.tower_id"
+            },
+            "ResultPath": "$.post_remediation_health",
+            "Next": "EvaluateRemediationSuccess"
+        },
+        "EvaluateRemediationSuccess": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.post_remediation_health.overall_status",
+                    "StringEquals": "healthy",
+                    "Next": "LogSuccessfulRemediation"
+                },
+                {
+                    "Variable": "$.post_remediation_health.overall_status",
+                    "StringEquals": "warning",
+                    "Next": "PartialRemediationSuccess"
+                }
+            ],
+            "Default": "EscalateToHuman"
+        },
+        "LogSuccessfulRemediation": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:putItem",
+            "Parameters": {
+                "TableName": "TRACE-IncidentLog-${ENVIRONMENT}",
+                "Item": {
+                    "incident_id": {
+                        "S.$": "$.alert.alert_id"
+                    },
+                    "timestamp": {
+                        "S.$": "$$.State.EnteredTime"
+                    },
+                    "tower_id": {
+                        "S.$": "$.tower_id"
+                    },
+                    "status": {
+                        "S": "resolved"
+                    },
+                    "resolution": {
+                        "S": "auto_remediation_successful"
+                    },
+                    "details": {
+                        "S.$": "States.JsonToString($.post_remediation_health)"
+                    }
+                }
+            },
+            "Next": "SendResolutionNotification"
+        },
+        "PartialRemediationSuccess": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:putItem",
+            "Parameters": {
+                "TableName": "TRACE-IncidentLog-${ENVIRONMENT}",
+                "Item": {
+                    "incident_id": {
+                        "S.$": "$.alert.alert_id"
+                    },
+                    "timestamp": {
+                        "S.$": "$$.State.EnteredTime"
+                    },
+                    "tower_id": {
+                        "S.$": "$.tower_id"
+                    },
+                    "status": {
+                        "S": "partially_resolved"
+                    },
+                    "details": {
+                        "S.$": "States.JsonToString($.post_remediation_health)"
+                    }
+                }
+            },
+            "Next": "ScheduleFollowUp"
+        },
+        "ScheduleFollowUp": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sqs:sendMessage",
+            "Parameters": {
+                "QueueUrl": "https://sqs.${AWS_REGION}.amazonaws.com/${AWS_ACCOUNT_ID}/TRACE-FollowUp-${ENVIRONMENT}",
+                "MessageBody.$": "States.JsonToString($)",
+                "DelaySeconds": 300
+            },
+            "Next": "SendResolutionNotification"
+        },
+        "EscalateToHuman": {
+            "Type": "Parallel",
+            "Branches": [
+                {
+                    "StartAt": "LogEscalation",
+                    "States": {
+                        "LogEscalation": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:states:::dynamodb:putItem",
+                            "Parameters": {
+                                "TableName": "TRACE-IncidentLog-${ENVIRONMENT}",
+                                "Item": {
+                                    "incident_id": {
+                                        "S.$": "$.alert.alert_id"
+                                    },
+                                    "timestamp": {
+                                        "S.$": "$$.State.EnteredTime"
+                                    },
+                                    "tower_id": {
+                                        "S.$": "$.tower_id"
+                                    },
+                                    "status": {
+                                        "S": "escalated"
+                                    },
+                                    "reason": {
+                                        "S": "auto_remediation_failed"
+                                    },
+                                    "details": {
+                                        "S.$": "States.JsonToString($.post_remediation_health)"
+                                    }
+                                }
+                            },
+                            "End": true
+                        }
+                    }
+                },
+                {
+                    "StartAt": "NotifyEngineering",
+                    "States": {
+                        "NotifyEngineering": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:states:::sns:publish",
+                            "Parameters": {
+                                "TopicArn": "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:TRACE-Escalations-${ENVIRONMENT}",
+                                "Message.$": "States.Format('ESCALATION REQUIRED: Tower {} requires manual intervention. Alert: {}. Auto-remediation failed. Current status: {}', $.tower_id, $.alert.message, $.post_remediation_health.overall_status)",
+                                "Subject": "TRACE Escalation - Manual Intervention Required"
+                            },
+                            "End": true
+                        }
+                    }
+                },
+                {
+                    "StartAt": "CreateOpsItem",
+                    "States": {
+                        "CreateOpsItem": {
+                            "Type": "Task",
+                            "Resource": "arn:aws:states:::aws-sdk:ssm:createOpsItem",
+                            "Parameters": {
+                                "Title.$": "States.Format('TRACE Alert - Tower {} Requires Attention', $.tower_id)",
+                                "Description.$": "States.Format('Auto-remediation failed for alert: {}', $.alert.message)",
+                                "Source": "TRACE-SelfHealing",
+                                "Severity": "2",
+                                "OperationalData": {
+                                    "tower_id": {
+                                        "Value.$": "$.tower_id",
+                                        "Type": "String"
+                                    },
+                                    "alert_id": {
+                                        "Value.$": "$.alert.alert_id",
+                                        "Type": "String"
+                                    }
+                                }
+                            },
+                            "End": true
+                        }
+                    }
+                }
+            ],
+            "End": true
+        },
+        "SendResolutionNotification": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sns:publish",
+            "Parameters": {
+                "TopicArn": "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:TRACE-Notifications-${ENVIRONMENT}",
+                "Message.$": "States.Format('Tower {} alert resolved. Status: {}', $.tower_id, $.post_remediation_health.overall_status)",
+                "Subject": "TRACE Alert Resolved"
+            },
+            "End": true
+        },
+        "NotifyFailure": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sns:publish",
+            "Parameters": {
+                "TopicArn": "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:TRACE-Errors-${ENVIRONMENT}",
+                "Message.$": "States.Format('Self-healing workflow failed for tower {}. Error: {}', $.tower_id, $.error)",
+                "Subject": "TRACE Workflow Failure"
+            },
+            "End": true
+        }
+    }
+}

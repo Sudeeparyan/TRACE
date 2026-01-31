@@ -1,0 +1,172 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "TRACE MCP Tools - Lambda Functions and API Gateway",
+  
+  "Parameters": {
+    "Environment": {
+      "Type": "String",
+      "Default": "production",
+      "AllowedValues": ["development", "staging", "production"]
+    }
+  },
+  
+  "Resources": {
+    "MCPLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "trace-mcp-lambda-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"Service": "lambda.amazonaws.com"},
+            "Action": "sts:AssumeRole"
+          }]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+        ],
+        "Tags": [
+          {"Key": "Project", "Value": "TRACE"},
+          {"Key": "Component", "Value": "MCP-Tools"}
+        ]
+      }
+    },
+    
+    "MCPToolsLambda": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": "MCPLambdaRole",
+      "Properties": {
+        "FunctionName": "trace-mcp-tools",
+        "Runtime": "python3.12",
+        "Handler": "mcp_tools_lambda.lambda_handler",
+        "Role": {"Fn::GetAtt": ["MCPLambdaRole", "Arn"]},
+        "Timeout": 30,
+        "MemorySize": 256,
+        "Description": "TRACE MCP Tools - Telemetry, Energy, Config, and Policy tools for agent context sharing",
+        "Environment": {
+          "Variables": {
+            "TRACE_ENVIRONMENT": {"Ref": "Environment"}
+          }
+        },
+        "Tags": [
+          {"Key": "Project", "Value": "TRACE"},
+          {"Key": "Component", "Value": "MCP-Tools"}
+        ]
+      }
+    },
+    
+    "MCPApiGateway": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": "trace-mcp-api",
+        "ProtocolType": "HTTP",
+        "Description": "API Gateway for TRACE MCP Tools",
+        "CorsConfiguration": {
+          "AllowOrigins": ["*"],
+          "AllowMethods": ["POST", "OPTIONS"],
+          "AllowHeaders": ["Content-Type", "Authorization"]
+        },
+        "Tags": {
+          "Project": "TRACE",
+          "Component": "MCP-API"
+        }
+      }
+    },
+    
+    "MCPApiIntegration": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {"Ref": "MCPApiGateway"},
+        "IntegrationType": "AWS_PROXY",
+        "IntegrationUri": {"Fn::GetAtt": ["MCPToolsLambda", "Arn"]},
+        "PayloadFormatVersion": "2.0"
+      }
+    },
+    
+    "MCPApiRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {"Ref": "MCPApiGateway"},
+        "RouteKey": "POST /mcp/tool",
+        "Target": {"Fn::Join": ["/", ["integrations", {"Ref": "MCPApiIntegration"}]]}
+      }
+    },
+    
+    "MCPApiStage": {
+      "Type": "AWS::ApiGatewayV2::Stage",
+      "Properties": {
+        "ApiId": {"Ref": "MCPApiGateway"},
+        "StageName": "v1",
+        "AutoDeploy": true,
+        "Description": "V1 Stage for TRACE MCP API"
+      }
+    },
+    
+    "LambdaApiGatewayPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {"Ref": "MCPToolsLambda"},
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {"Fn::Sub": "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MCPApiGateway}/*"}
+      }
+    },
+    
+    "RemediationLogTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "trace-remediation-log",
+        "AttributeDefinitions": [
+          {"AttributeName": "id", "AttributeType": "S"},
+          {"AttributeName": "tower_id", "AttributeType": "S"}
+        ],
+        "KeySchema": [
+          {"AttributeName": "id", "KeyType": "HASH"}
+        ],
+        "GlobalSecondaryIndexes": [{
+          "IndexName": "tower-index",
+          "KeySchema": [{"AttributeName": "tower_id", "KeyType": "HASH"}],
+          "Projection": {"ProjectionType": "ALL"}
+        }],
+        "BillingMode": "PAY_PER_REQUEST",
+        "Tags": [
+          {"Key": "Project", "Value": "TRACE"},
+          {"Key": "Component", "Value": "Data"}
+        ]
+      }
+    },
+    
+    "EnergyLogTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Properties": {
+        "TableName": "trace-energy-log",
+        "AttributeDefinitions": [
+          {"AttributeName": "id", "AttributeType": "S"}
+        ],
+        "KeySchema": [
+          {"AttributeName": "id", "KeyType": "HASH"}
+        ],
+        "BillingMode": "PAY_PER_REQUEST",
+        "Tags": [
+          {"Key": "Project", "Value": "TRACE"},
+          {"Key": "Component", "Value": "Data"}
+        ]
+      }
+    }
+  },
+  
+  "Outputs": {
+    "MCPApiEndpoint": {
+      "Description": "API Gateway endpoint for MCP Tools",
+      "Value": {"Fn::Sub": "https://${MCPApiGateway}.execute-api.${AWS::Region}.amazonaws.com/v1/mcp/tool"},
+      "Export": {"Name": "trace-mcp-api-endpoint"}
+    },
+    "MCPLambdaArn": {
+      "Description": "ARN of the MCP Tools Lambda function",
+      "Value": {"Fn::GetAtt": ["MCPToolsLambda", "Arn"]},
+      "Export": {"Name": "trace-mcp-lambda-arn"}
+    }
+  }
+}

@@ -22,7 +22,8 @@ if str(parent_dir) not in sys.path:
 try:
     import adk_json_patch  # This patches ADK to handle JSON files
 except ImportError:
-    print("⚠️ Warning: adk_json_patch not found - JSON file uploads may fail")
+    # adk_json_patch is optional - system works without it
+    pass
 
 # Now import the agent
 from .agent import root_agent

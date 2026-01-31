@@ -85,21 +85,49 @@ echo Starting TRACE Dashboard (Backend + Frontend)...
 echo.
 
 REM Check if Python is available
+echo Checking Python...
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python is not installed or not in PATH
+    echo [ERROR] Python is not installed or not in PATH
+    echo.
+    echo Please install Python 3.10+ from https://www.python.org/downloads/
     pause
     exit /b 1
 )
+for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VER=%%i
+echo   [OK] Python %PYTHON_VER% found
 
 REM Check if Node.js is available
+echo Checking Node.js...
 node --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Node.js is not installed or not in PATH
+    echo [ERROR] Node.js is not installed or not in PATH
+    echo.
+    echo Please install Node.js 18+ from https://nodejs.org/
     pause
     exit /b 1
 )
+for /f %%i in ('node --version') do set NODE_VER=%%i
+echo   [OK] Node.js %NODE_VER% found
 
+REM Check for .env file
+if not exist ".env" (
+    if exist ".env.example" (
+        echo   [WARN] .env not found, creating from .env.example...
+        copy ".env.example" ".env" >nul
+    )
+)
+
+REM Check if node_modules exists
+if not exist "client\node_modules" (
+    echo.
+    echo   [INFO] Installing npm dependencies...
+    cd client
+    call npm install
+    cd ..
+)
+
+echo.
 echo [1/2] Starting Dashboard Backend Server (Port 8000)...
 start "TRACE Backend" cmd /k "cd /d %~dp0client\server && python dashboard_server.py"
 
@@ -115,9 +143,10 @@ echo TRACE Dashboard is starting!
 echo ============================================================
 echo.
 echo  Dashboard Backend: http://localhost:8000
-echo  Frontend:         http://localhost:5173
+echo  Frontend:          http://localhost:5173
 echo.
-echo  To start ADK Web separately, run: start_trace.bat adk
+echo  To start ADK Web separately, run: start_all.bat adk
+echo  To start full system with ADK: start_full_system.bat
 echo.
 echo  Press any key to open the dashboard in your browser...
 pause >nul

@@ -1,0 +1,24 @@
+{
+  "servers": {
+    "trace-telemetry": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/telemetry_server.py"]
+    },
+    "trace-tower-config": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/tower_config_server.py"]
+    },
+    "trace-energy": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/energy_server.py"]
+    },
+    "trace-policy": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["mcp_servers/policy_server.py"]
+    }
+  }
+}

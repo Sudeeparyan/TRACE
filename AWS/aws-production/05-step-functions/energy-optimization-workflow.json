@@ -1,0 +1,275 @@
+{
+    "Comment": "TRACE Energy Optimization Workflow - Reduces power consumption during low-traffic periods",
+    "StartAt": "AnalyzeTrafficPatterns",
+    "States": {
+        "AnalyzeTrafficPatterns": {
+            "Type": "Task",
+            "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Analytics-${ENVIRONMENT}",
+            "Parameters": {
+                "action": "analyze_traffic",
+                "region.$": "$.region",
+                "time_window": "1h"
+            },
+            "ResultPath": "$.traffic_analysis",
+            "Next": "DetermineOptimizationStrategy",
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.AWSLambdaException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2
+                }
+            ],
+            "Catch": [
+                {
+                    "ErrorEquals": [
+                        "States.ALL"
+                    ],
+                    "ResultPath": "$.error",
+                    "Next": "LogError"
+                }
+            ]
+        },
+        "DetermineOptimizationStrategy": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.traffic_analysis.traffic_level",
+                    "StringEquals": "low",
+                    "Next": "ApplyAggressiveOptimization"
+                },
+                {
+                    "Variable": "$.traffic_analysis.traffic_level",
+                    "StringEquals": "medium",
+                    "Next": "ApplyModerateOptimization"
+                },
+                {
+                    "Variable": "$.traffic_analysis.traffic_level",
+                    "StringEquals": "high",
+                    "Next": "MaintainFullCapacity"
+                }
+            ],
+            "Default": "MaintainFullCapacity"
+        },
+        "ApplyAggressiveOptimization": {
+            "Type": "Map",
+            "ItemsPath": "$.traffic_analysis.towers",
+            "MaxConcurrency": 5,
+            "Parameters": {
+                "tower.$": "$$.Map.Item.Value",
+                "optimization_level": "aggressive",
+                "region.$": "$.region"
+            },
+            "Iterator": {
+                "StartAt": "OptimizeTower",
+                "States": {
+                    "OptimizeTower": {
+                        "Type": "Task",
+                        "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Remediation-${ENVIRONMENT}",
+                        "Parameters": {
+                            "action": "adjust_power",
+                            "tower_id.$": "$.tower.tower_id",
+                            "mode": "eco",
+                            "reason": "low_traffic_optimization"
+                        },
+                        "ResultPath": "$.optimization_result",
+                        "Next": "ReduceCompute"
+                    },
+                    "ReduceCompute": {
+                        "Type": "Task",
+                        "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Remediation-${ENVIRONMENT}",
+                        "Parameters": {
+                            "action": "scale_resources",
+                            "tower_id.$": "$.tower.tower_id",
+                            "direction": "down",
+                            "target_utilization": 50
+                        },
+                        "ResultPath": "$.scale_result",
+                        "End": true
+                    }
+                }
+            },
+            "ResultPath": "$.optimization_results",
+            "Next": "CalculateSavings"
+        },
+        "ApplyModerateOptimization": {
+            "Type": "Map",
+            "ItemsPath": "$.traffic_analysis.towers",
+            "MaxConcurrency": 5,
+            "Parameters": {
+                "tower.$": "$$.Map.Item.Value",
+                "optimization_level": "moderate",
+                "region.$": "$.region"
+            },
+            "Iterator": {
+                "StartAt": "ModerateOptimize",
+                "States": {
+                    "ModerateOptimize": {
+                        "Type": "Choice",
+                        "Choices": [
+                            {
+                                "Variable": "$.tower.current_utilization",
+                                "NumericLessThan": 50,
+                                "Next": "ApplyEcoMode"
+                            }
+                        ],
+                        "Default": "SkipOptimization"
+                    },
+                    "ApplyEcoMode": {
+                        "Type": "Task",
+                        "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Remediation-${ENVIRONMENT}",
+                        "Parameters": {
+                            "action": "adjust_power",
+                            "tower_id.$": "$.tower.tower_id",
+                            "mode": "eco",
+                            "reason": "moderate_traffic_optimization"
+                        },
+                        "End": true
+                    },
+                    "SkipOptimization": {
+                        "Type": "Pass",
+                        "Result": {
+                            "action": "skipped",
+                            "reason": "utilization_above_threshold"
+                        },
+                        "End": true
+                    }
+                }
+            },
+            "ResultPath": "$.optimization_results",
+            "Next": "CalculateSavings"
+        },
+        "MaintainFullCapacity": {
+            "Type": "Map",
+            "ItemsPath": "$.traffic_analysis.towers",
+            "MaxConcurrency": 5,
+            "Parameters": {
+                "tower.$": "$$.Map.Item.Value",
+                "region.$": "$.region"
+            },
+            "Iterator": {
+                "StartAt": "CheckCurrentMode",
+                "States": {
+                    "CheckCurrentMode": {
+                        "Type": "Choice",
+                        "Choices": [
+                            {
+                                "Variable": "$.tower.power_mode",
+                                "StringEquals": "eco",
+                                "Next": "RestoreFullPower"
+                            }
+                        ],
+                        "Default": "NoChangeNeeded"
+                    },
+                    "RestoreFullPower": {
+                        "Type": "Task",
+                        "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Remediation-${ENVIRONMENT}",
+                        "Parameters": {
+                            "action": "adjust_power",
+                            "tower_id.$": "$.tower.tower_id",
+                            "mode": "full",
+                            "reason": "high_traffic_demand"
+                        },
+                        "End": true
+                    },
+                    "NoChangeNeeded": {
+                        "Type": "Pass",
+                        "Result": {
+                            "action": "maintained",
+                            "reason": "already_at_full_capacity"
+                        },
+                        "End": true
+                    }
+                }
+            },
+            "ResultPath": "$.optimization_results",
+            "Next": "CalculateSavings"
+        },
+        "CalculateSavings": {
+            "Type": "Task",
+            "Resource": "arn:aws:lambda:${AWS_REGION}:${AWS_ACCOUNT_ID}:function:TRACE-Analytics-${ENVIRONMENT}",
+            "Parameters": {
+                "action": "calculate_energy_savings",
+                "optimization_results.$": "$.optimization_results",
+                "region.$": "$.region"
+            },
+            "ResultPath": "$.savings",
+            "Next": "RecordOptimization"
+        },
+        "RecordOptimization": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:putItem",
+            "Parameters": {
+                "TableName": "TRACE-EnergyLog-${ENVIRONMENT}",
+                "Item": {
+                    "log_id": {
+                        "S.$": "$$.Execution.Id"
+                    },
+                    "timestamp": {
+                        "S.$": "$$.State.EnteredTime"
+                    },
+                    "region": {
+                        "S.$": "$.region"
+                    },
+                    "traffic_level": {
+                        "S.$": "$.traffic_analysis.traffic_level"
+                    },
+                    "towers_optimized": {
+                        "N.$": "States.Format('{}', States.ArrayLength($.optimization_results))"
+                    },
+                    "estimated_savings_kwh": {
+                        "N.$": "States.Format('{}', $.savings.estimated_kwh)"
+                    },
+                    "savings_percentage": {
+                        "N.$": "States.Format('{}', $.savings.percentage)"
+                    }
+                }
+            },
+            "ResultPath": "$.log_result",
+            "Next": "CheckSignificantSavings"
+        },
+        "CheckSignificantSavings": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "Variable": "$.savings.percentage",
+                    "NumericGreaterThan": 10,
+                    "Next": "NotifySavings"
+                }
+            ],
+            "Default": "EndOptimization"
+        },
+        "NotifySavings": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sns:publish",
+            "Parameters": {
+                "TopicArn": "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:TRACE-Notifications-${ENVIRONMENT}",
+                "Message.$": "States.Format('Energy Optimization Report - Region: {}\nTraffic Level: {}\nTowers Optimized: {}\nEstimated Savings: {} kWh ({}%)', $.region, $.traffic_analysis.traffic_level, States.ArrayLength($.optimization_results), $.savings.estimated_kwh, $.savings.percentage)",
+                "Subject": "TRACE Energy Optimization - Significant Savings Achieved"
+            },
+            "Next": "EndOptimization"
+        },
+        "EndOptimization": {
+            "Type": "Succeed",
+            "Comment": "Energy optimization cycle complete"
+        },
+        "LogError": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::sns:publish",
+            "Parameters": {
+                "TopicArn": "arn:aws:sns:${AWS_REGION}:${AWS_ACCOUNT_ID}:TRACE-Errors-${ENVIRONMENT}",
+                "Message.$": "States.Format('Energy optimization workflow error for region {}. Error: {}', $.region, $.error)",
+                "Subject": "TRACE Energy Optimization Error"
+            },
+            "Next": "FailWorkflow"
+        },
+        "FailWorkflow": {
+            "Type": "Fail",
+            "Error": "EnergyOptimizationFailed",
+            "Cause": "See error notification for details"
+        }
+    }
+}

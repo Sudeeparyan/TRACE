@@ -1,0 +1,39 @@
+# TRACE AWS Production Requirements
+
+# AWS SDK
+boto3>=1.34.0
+botocore>=1.34.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# JSON/YAML handling
+pyyaml>=6.0
+python-dateutil>=2.8.2
+
+# HTTP/API
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Logging and monitoring
+structlog>=23.0.0
+watchtower>=3.0.0
+
+# Type hints
+typing-extensions>=4.5.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+moto>=4.2.0
+
+# CLI
+click>=8.1.0
+rich>=13.0.0
+
+# For WebSocket API
+websocket-client>=1.6.0
